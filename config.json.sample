@@ -1,0 +1,13 @@
+{
+    "path": "/media/Podcasts",
+    "podcasts": {
+        "No Instructions": {
+            "feed": "https://www.iliketomakestuff.com/feed/podcast/no-instructions-audio-podcast"
+        },
+        "The Way I Heard It": {
+            "feed": "http://thewayiheardit.rsvmedia.com/rss/",
+            "artist": "Mike Rowe"
+        },
+    }
+}
+
