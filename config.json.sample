@@ -6,7 +6,8 @@
         },
         "The Way I Heard It": {
             "feed": "http://thewayiheardit.rsvmedia.com/rss/",
-            "artist": "Mike Rowe"
+            "artist": "Mike Rowe", # optional
+            "album": "The Way I Heard It with Mike Rowe" # Optional
         },
     }
 }
