@@ -14,20 +14,14 @@ A simple podcast downloading program that will write customizable metadata to ID
 
 1. Set up your config file in the same directory as `podcast-downloader.py` with your desired storage path and the details of the various feeds that you'd like to download
 
-```json
-{
-    "path": "/media/Podcasts",
-    "podcasts": {
-        "No Instructions": {
-            "feed": "https://www.iliketomakestuff.com/feed/podcast/no-instructions-audio-podcast"
-        },
-        "The Way I Heard It": {
-            "feed": "http://thewayiheardit.rsvmedia.com/rss/",
-            "artist": "Mike Rowe", # Optional
-            "album": "The Way I Heard It with Mike Rowe" # Optional
-        },
-    }
-}
+```yaml
+path: /home/matt/Podcasts
+podcasts:
+  No Instructions:
+    feed: https://www.iliketomakestuff.com/feed/podcast/no-instructions-audio-podcast
+  The Way I Heard It:
+    artist: Mike Rowe
+    feed: http://thewayiheardit.rsvmedia.com/rss/
 ```
 
   * Note that `feed` is the only required field.  `artist` and `album` are optional if you'd like to manually define metadata for a given podcast series.  If they're left blank, they will default to using the podcast name for both fields.
