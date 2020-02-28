@@ -2,6 +2,9 @@ path: /home/matt/Podcasts
 podcasts:
   No Instructions:
     feed: https://www.iliketomakestuff.com/feed/podcast/no-instructions-audio-podcast
+    genre:
+      - Building
+      - Making
   The Way I Heard It:
     artist: Mike Rowe
     feed: http://thewayiheardit.rsvmedia.com/rss/

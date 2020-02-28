@@ -49,7 +49,9 @@ def make_tags(podcast, attribs, path, filename, episode):
     tags['title'] = episode.get('title', filename)
     tags['artist'] = attribs.get('artist', podcast)
     tags['album'] = attribs.get('album', podcast)
-    tags['genre'] = 'Podcast'
+    genres = attribs.get('genres', [])
+    genres.append('Podcast')
+    tags['genre'] = ','.join(genres)
     tags.save()
 
     return
