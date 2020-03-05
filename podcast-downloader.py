@@ -1,6 +1,7 @@
 import yaml
 import io
 import os
+import re
 import sys
 
 import mutagen
@@ -52,9 +53,26 @@ def make_tags(podcast, attribs, path, filename, episode):
     genres = attribs.get('genres', [])
     genres.append('Podcast')
     tags['genre'] = ','.join(genres)
+    if attribs.get('track_num'):
+        tags['tracknumber'] = str(attribs.get('track_num'))
     tags.save()
 
     return
+
+def find_track_num(title):
+    # https://regex101.com/r/riK5vw/3
+    reg_match = '(#|[Ee]pisode|[Ee]p)( |_|-|\.|#)*?(\d+)|^(\d+)(?!\.\d+)| (\d+)[ :-_].*$'
+
+    matches = re.search(reg_match, title)
+
+    if matches:
+        track_num = [ int(match) for match in matches.groups()
+                     if match and match.isdigit() ][0]
+    else:
+        track_num = 0
+
+    return '{:03d}'.format(track_num)
+
 
 if __name__ == '__main__':
     config = load_config()
@@ -62,6 +80,7 @@ if __name__ == '__main__':
     results = {}
     # Some feeds block the default requests user agent
     headers = {'User-Agent': "Podcast Downloader Bot"}
+
     for podcast,attribs in config.get('podcasts').items():
         print(f"==== Processing '{podcast}' ====")
         feed = requests.get(attribs.get('feed'), headers=headers)
@@ -76,12 +95,21 @@ if __name__ == '__main__':
             pass
 
         for episode in parsed_feed.get('episodes'):
-            filename = f"{episode.get('title').replace(' ', '_').encode('ascii', 'ignore').decode().strip('.')}.mp3".replace('/', '-')
-            if not os.path.isfile(f"{path}/{filename}"):
-                print(f"Downloading '{filename}'")
+            title = episode.get('title')
+            filename = title.replace(' ', '_').replace('/', '-').strip('.')
+            filename += '.mp3'
+            if not os.path.isfile(f'{path}/{filename}'):
+                # Download if the file doesn't already exist
+                print(f'Downloading "{filename}"')
+                attribs['track_num'] = find_track_num(title)
                 dl_file = download_file(path, filename, episode)
                 if dl_file:
                     make_tags(podcast, attribs, path, filename, episode)
+                results[podcast].append(episode)
+            elif config.get('overwrite_tags', False):
+                # If the file exists but overwrite_tags is set, make new tags
+                attribs['track_num'] = find_track_num(title)
+                make_tags(podcast, attribs, path, filename, episode)
                 results[podcast].append(episode)
             else:
                 print(f"Episode '{filename}' already exists")
