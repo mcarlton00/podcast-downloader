@@ -1,4 +1,4 @@
-import yaml
+import json
 import io
 import os
 import re
@@ -8,6 +8,7 @@ import mutagen
 from mutagen.easyid3 import EasyID3
 import podcastparser
 import requests
+import yaml
 
 def load_config():
     path = os.path.dirname(os.path.abspath(__file__))
@@ -16,23 +17,42 @@ def load_config():
 
     return config
 
+def read_cache(path):
+
+    if os.path.isfile(f'{path}/downloaded_episodes.json'):
+        with open(f'{path}/downloaded_episodes.json', 'r') as f:
+            cache = json.load(f)
+    else:
+        cache = {}
+
+    return cache
+
+def write_cache(path, cache):
+    with open(f'{path}/downloaded_episodes.json', 'w') as f:
+        json.dump(cache, f)
+
+
 def download_file(path, filename, episode):
     # Downloads the podcast episode
     # Some sites were blocking the default useragent of requests
     headers = {'User-Agent': "Podcast Downloader Bot"}
     if episode.get('enclosures'):
         url = episode.get('enclosures')[0].get('url')
-        with requests.get(url, headers=headers) as r:
-            r.raise_for_status()
-            if r.content:
-                with open(f"{path}/{filename}", 'wb') as f:
-                    f.write(r.content)
-                    f.close()
-                    return True
-            else:
-                print("Episode contents were empty -- Skipping")
+        try:
+            with requests.get(url, headers=headers) as r:
+                r.raise_for_status()
+                if r.content:
+                    with open(f"{path}/{filename}", 'wb') as f:
+                        f.write(r.content)
+                        f.close()
+                        return True
+                else:
+                    print("Episode contents were empty -- Skipping")
+        except:
+            print(f'Error downloading {filename} from {url}')
+            pass
     else:
-        print('No download link found for {filename}')
+        print(f'No download link found for {filename}')
     return False
 
 def make_tags(podcast, attribs, path, filename, episode):
@@ -77,6 +97,7 @@ def find_track_num(title):
 if __name__ == '__main__':
     config = load_config()
     root_path = config.get('path')
+    cache = read_cache(root_path)
     results = {}
     # Some feeds block the default requests user agent
     headers = {'User-Agent': "Podcast Downloader Bot"}
@@ -96,20 +117,28 @@ if __name__ == '__main__':
 
         for episode in parsed_feed.get('episodes'):
             title = episode.get('title')
-            filename = title.replace(' ', '_').replace('/', '-').strip('.')
-            filename += '.mp3'
-            if not os.path.isfile(f'{path}/{filename}'):
-                # Download if the file doesn't already exist
-                print(f'Downloading "{filename}"')
-                attribs['track_num'] = find_track_num(title)
-                dl_file = download_file(path, filename, episode)
-                if dl_file:
+            if not cache.get(podcast):
+                cache[podcast] = []
+            if title not in cache.get(podcast, []):
+                filename = title.replace(' ', '_').replace('/', '-').strip('.')
+                filename += '.mp3'
+                if not os.path.isfile(f'{path}/{filename}'):
+                    # Download if the file doesn't already exist
+                    print(f'Downloading "{filename}"')
+                    attribs['track_num'] = find_track_num(title)
+                    dl_file = download_file(path, filename, episode)
+                    if dl_file:
+                        if cache.get(podcast):
+                            cache[podcast].append(title)
+                        else:
+                            cache[podcast] = [ title ]
+                        make_tags(podcast, attribs, path, filename, episode)
+                    results[podcast].append(episode)
+                elif config.get('overwrite_tags', False):
+                    # If the file exists but overwrite_tags is set, make new tags
+                    attribs['track_num'] = find_track_num(title)
                     make_tags(podcast, attribs, path, filename, episode)
-                results[podcast].append(episode)
-            elif config.get('overwrite_tags', False):
-                # If the file exists but overwrite_tags is set, make new tags
-                attribs['track_num'] = find_track_num(title)
-                make_tags(podcast, attribs, path, filename, episode)
-                results[podcast].append(episode)
-            else:
-                print(f"Episode '{filename}' already exists")
+                    results[podcast].append(episode)
+                else:
+                    print(f"Episode '{filename}' already exists")
+    write_cache(root_path, cache)
