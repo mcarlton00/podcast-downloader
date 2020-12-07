@@ -28,6 +28,7 @@ def read_cache(path):
     return cache
 
 def write_cache(path, cache):
+    print('Writing cache file')
     with open(f'{path}/downloaded_episodes.json', 'w') as f:
         json.dump(cache, f)
 
@@ -141,4 +142,7 @@ if __name__ == '__main__':
                     results[podcast].append(episode)
                 else:
                     print(f"Episode '{filename}' already exists")
+                    if cache.get(podcast, None) is not None:
+                        if title not in cache[podcast]:
+                            cache[podcast].append(title)
     write_cache(root_path, cache)
