@@ -122,7 +122,9 @@ if __name__ == '__main__':
                 cache[podcast] = []
             if title not in cache.get(podcast, []):
                 filename = title.replace(' ', '_').replace('/', '-').strip('.')
-                filename += '.mp3'
+                url = episode.get('enclosures')[0].get('url')
+                extension = url[-4:]
+                filename += extension
                 if not os.path.isfile(f'{path}/{filename}'):
                     # Download if the file doesn't already exist
                     print(f'Downloading "{filename}"')
